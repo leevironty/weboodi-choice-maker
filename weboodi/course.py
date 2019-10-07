@@ -86,7 +86,6 @@ class Category:
         return self.selected is not None
 
     def lock_selection(self):
-        assert(len(self.proposed) == 1)
         self.selected = self.proposed[0]
 
 

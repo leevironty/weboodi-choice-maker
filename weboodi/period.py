@@ -1,6 +1,7 @@
 from weboodi.course import Course
 import copy
 
+
 class Period:
     """Represents a teaching and evaluation period. It contains courses to be selected for said period."""
     def __init__(self):
@@ -56,28 +57,40 @@ class Period:
                 cat.lock_selection()
 
     def thin_options(self, cats, dates):
-        self.disable_blocked_options(cats, dates)
-        # self.select_only_options(cats)
-        for cat in cats:
+        self.disable_blocked_options(cats, dates)  # remove impossible options
+        for cat in cats:  # select only options
             if len(cat.proposed) == 1 and not cat.is_ready:
                 cat.lock_selection()
                 dates += cat.selected.dates
-        if all([cat.is_ready for cat in cats]):
-            return [cats]
-        # Ei helppoja ratkaisuja, otetaan siis joku ratkaisu ja jatketaan kunnes valmis
+        if all([cat.is_ready for cat in cats]):  # base solution: all categories are resolved
+            return [[cat.selected for cat in cats]]
+
+        # nothing to easily remove -> let's remove something
         results = []
-        for i in range(len(cats)):
+        first_not_ready = None
+        for i in range(len(cats)):  # We only need to consider the first non-ready category because of recursion
             if cats[i].is_ready:
                 continue
-            for j in range(len(cats[i].proposed)):
-                cp_cats = copy.deepcopy(cats)
-                cp_dates = dates[:]
-                cat = cp_cats[i]
-                s = cat.proposed[j]
-                for opt in cat.proposed:
-                    opt.proposed = False
-                s.proposed = True
-                cat.lock_selection()
-                cp_dates += cat.selected.dates
-                results += self.thin_options(cp_cats, cp_dates)
+            else:
+                first_not_ready = i
+                break
+
+        for j in range(len(cats[first_not_ready].proposed)):  # Iterate through all possible options of chosen category
+            cat = cats[first_not_ready]
+            s = cat.proposed[j]
+            to_reset = []  # Deep copies suck, so se just reset our objects
+            for opt in cat.proposed:
+                opt.proposed = False
+                to_reset.append(opt)
+            s.proposed = True
+            cat.lock_selection()
+            dates += cat.selected.dates
+
+            results += self.thin_options(cats, dates)
+            # reset dates and options
+            for date in cat.selected.dates:
+                dates.remove(date)
+            for opt in to_reset:
+                opt.proposed = True
+            cat.selected = None
         return results
