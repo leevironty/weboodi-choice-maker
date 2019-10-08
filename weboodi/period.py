@@ -1,6 +1,7 @@
 from weboodi.course import Course
 import copy
 
+
 class Period:
     """Represents a teaching and evaluation period. It contains courses to be selected for said period."""
     def __init__(self):
