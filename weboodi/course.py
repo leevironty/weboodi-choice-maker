@@ -4,6 +4,7 @@ import datetime
 import datetimerange
 import dateutil
 import time
+import re
 from typing import List
 
 # TODO: add docstrings
@@ -64,17 +65,36 @@ class Category:
         self.selected = None
 
     @staticmethod
+    def get_categories_from_html_old(html):
+        soup = BeautifulSoup(html, "html5lib")
+        table_headers = soup.select("div.tauluotsikko")
+        for tag in table_headers:
+            if "ILMOITTAUTUMISOHJEET" in tag.text:
+                sibling = tag
+                break
+        tables = []
+        while sibling.next_sibling:
+            sibling = sibling.next_sibling
+            if sibling.name == "table":
+                tables.append(sibling)
+
+        #tables = soup.select("form[name=ilmotForm] > table")
+        categories = [Category.get_category_from_table_soup(table) for table in tables]
+        return categories
+
+    @staticmethod
     def get_categories_from_html(html):
-        soup = BeautifulSoup(html, "lxml")
-        tables = soup.select("form[name=ilmotForm] > table")
+        soup = BeautifulSoup(html, "html5lib")
+
+        tables = soup.select(".kll")
         categories = [Category.get_category_from_table_soup(table) for table in tables]
         return categories
 
     @staticmethod
     def get_category_from_table_soup(table):
-        category_type = table.select("tbody > tr > th > table > tbody > tr > th")[1].contents[0].strip()
-        options_html = table(recursive=False)
-        options = [Option.get_option_from_soup(opt) for opt in options_html if "Aika ja Paikka" not in opt.getText()]
+        category_type = table.find_all(text=re.compile("Opettaja"))[0].parent.parent.th.text.strip()
+        options_soup = table(recursive=False)
+        options = [Option.get_option_from_soup(opt) for opt in options_soup if "Aika ja Paikka" not in opt.getText()]
         return Category(category_type, options)
 
     @property
