@@ -3,7 +3,7 @@ from weboodi.course import Option
 from bs4 import BeautifulSoup as bs
 
 
-class TestSoupToOption(unittest.TestCase):
+class TestOption(unittest.TestCase):
     def test_normal(self):
         html = '''<tr>
     <td width="16%" valign="top" class="">
@@ -135,10 +135,10 @@ class TestSoupToOption(unittest.TestCase):
 
 
 </td></tr>'''
-        soup = bs(html)
-        opt = Option.get_option_from_soup(soup)
+        soup = bs(html, "lxml").body.tr
+        opt = Option(soup, None)
         self.assertEqual(opt.name, "H01", "Name should be H01")
-        self.assertEqual(opt.proposed, "True", "Option should be proposed")
+        self.assertTrue(opt.proposed, "Option should be proposed")
         self.assertEqual(len(opt.dates), 12, "Should happen 12 times")
 
     def test_not_normal(self):
@@ -250,6 +250,7 @@ class TestSoupToOption(unittest.TestCase):
     
 
     </td></tr>'''
-        soup = bs(html)
-        opt = Option.get_option_from_soup(soup)
-        self.assertIsNone(opt, "Should not be an option")
+        soup = bs(html, "lxml").body.tr
+        opt = Option(soup, None)
+        self.assertEqual(len(opt.dates), 0,  "Should not have events")
+
